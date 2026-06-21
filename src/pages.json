@@ -1,0 +1,86 @@
+{
+	"pages": [
+		{
+			"path": "pages/auth/auth",
+			"style": { "navigationStyle": "custom" }
+		},
+		{
+			"path": "pages/home/home",
+			"style": { "navigationStyle": "custom" }
+		},
+		{
+			"path": "pages/classroom/classroom",
+			"style": { "navigationStyle": "custom" }
+		},
+		{
+			"path": "pages/explore/explore",
+			"style": { "navigationStyle": "custom" }
+		},
+		{
+			"path": "pages/my/my",
+			"style": { "navigationStyle": "custom" }
+		},
+		{
+			"path": "pages/classroom/article-detail",
+			"style": { "navigationBarTitleText": "文章详情" }
+		},
+		{
+			"path": "pages/classroom/video-detail",
+			"style": { "navigationBarTitleText": "视频详情" }
+		},
+		{
+			"path": "pages/explore/quiz",
+			"style": { "navigationBarTitleText": "情报测验" }
+		},
+		{
+			"path": "pages/explore/forum",
+			"style": { "navigationBarTitleText": "战史研讨" }
+		},
+		{
+			"path": "pages/explore/post-detail",
+			"style": { "navigationBarTitleText": "讨论详情" }
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "二战历史地图集",
+		"navigationBarBackgroundColor": "#f4ebd8",
+		"backgroundColor": "#f4ebd8"
+	},
+	"tabBar": {
+		"custom": true,
+		"color": "#6e6150",
+		"selectedColor": "#7a3b31",
+		"backgroundColor": "#faf7ef",
+		"borderStyle": "white",
+		"list": [
+			{
+				"pagePath": "pages/home/home",
+				"text": "态势图",
+				"iconPath": "static/tab-map.png",
+				"selectedIconPath": "static/tab-map-active.png"
+			},
+			{
+				"pagePath": "pages/classroom/classroom",
+				"text": "课堂",
+				"iconPath": "static/tab-book.png",
+				"selectedIconPath": "static/tab-book-active.png"
+			},
+			{
+				"pagePath": "pages/explore/explore",
+				"text": "探索",
+				"iconPath": "static/tab-compass.png",
+				"selectedIconPath": "static/tab-compass-active.png"
+			},
+			{
+				"pagePath": "pages/my/my",
+				"text": "档案室",
+				"iconPath": "static/tab-user.png",
+				"selectedIconPath": "static/tab-user-active.png"
+			}
+		]
+	},
+	"easycom": {
+		"autoscan": true
+	}
+}

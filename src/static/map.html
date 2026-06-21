@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root {
+    --parchment-light: #f4ebd8;
+    --parchment-white: #faf7ef;
+    --ink-dark: #2c221a;
+    --ink-body: #3a3028;
+    --ink-muted: #6e6150;
+    --ink-soft: #9b8d7a;
+    --archive-red: #7a3b31;
+    --navy: #2c4a6e;
+    --axis-red: #8b2a2a;
+    --brass: #b8935a;
+    --brass-light: #d4c4a8;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: var(--parchment-light);
+    min-height: 100vh;
+    padding: 16px;
+    padding-bottom: 140px;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .status-bar { display:flex; justify-content:space-between; font-size:12px; color:var(--ink-muted); margin-bottom:16px; letter-spacing:1px; }
+  .status-bar .stime { font-weight:bold; color:var(--ink-body); }
+  .page-header { margin-bottom:24px; }
+  .overline { font-size:10px; letter-spacing:3px; color:var(--archive-red); display:block; margin-bottom:6px; text-transform:uppercase; }
+  .title { font-size:32px; color:var(--ink-dark); font-weight:700; display:block; }
+  .subtitle { font-size:14px; color:var(--ink-muted); font-style:italic; display:block; margin-top:6px; }
+  .divider { width:50px; height:3px; background:var(--archive-red); margin-top:12px; opacity:0.6; }
+
+  .map-card { background:var(--parchment-white); border:1px solid rgba(196,182,157,0.5); border-radius:12px; overflow:hidden; margin-bottom:16px; }
+  #map { width:100%; height:360px; }
+  .map-bar { display:flex; justify-content:space-between; padding:14px 20px; background:var(--parchment-light); border-top:1px solid rgba(196,182,157,0.3); }
+  .year-badge { font-size:26px; font-weight:700; color:var(--archive-red); }
+  .map-hint { font-size:12px; color:var(--ink-muted); font-style:italic; line-height:26px; }
+
+  .card { background:var(--parchment-white); border:1px solid rgba(196,182,157,0.5); border-radius:12px; padding:20px; margin-bottom:16px; }
+  .card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .card-title { font-size:20px; font-weight:700; color:var(--ink-dark); }
+  .badge { font-size:10px; padding:4px 12px; border-radius:12px; color:#f4ebd8; font-weight:700; letter-spacing:1px; }
+  .badge-intel { background:var(--ink-dark); border:1px solid var(--brass); }
+  .badge-classified { background:var(--archive-red); }
+
+  .slider-wrap { padding:0 4px; }
+  input[type=range] { width:100%; height:4px; -webkit-appearance:none; appearance:none; background:linear-gradient(to right, var(--archive-red) 0%, var(--brass) 100%); border-radius:2px; outline:none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:28px; height:28px; border-radius:50%; background:var(--archive-red); border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,0.3); cursor:pointer; }
+  .year-labels { display:flex; justify-content:space-between; font-size:11px; color:var(--ink-muted); margin-top:6px; padding:0 2px; }
+
+  .event-item { display:flex; align-items:center; gap:14px; padding:14px 0; border-bottom:1px solid rgba(196,182,157,0.25); cursor:pointer; }
+  .event-item:last-child { border-bottom:none; }
+  .dot { width:16px; height:16px; border-radius:50%; flex-shrink:0; }
+  .dot.allied { background:var(--navy); }
+  .dot.axis { background:var(--axis-red); }
+  .dot.neutral { background:#b8935a; }
+  .event-info { flex:1; min-width:0; }
+  .event-name { font-size:16px; font-weight:600; color:var(--ink-dark); display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .event-date { font-size:13px; color:var(--ink-muted); }
+
+  .nav-bar { position:fixed; bottom:0; left:0; right:0; height:75px; background:linear-gradient(180deg,#faf7ef,#f0e8d5); display:flex; align-items:flex-start; justify-content:space-around; border-top:1px solid #d4c4a8; z-index:9998; padding-top:10px; }
+  .nav-item { display:flex; flex-direction:column; align-items:center; gap:2px; font-size:12px; color:#6e6150; }
+  .nav-item.active { color:#7a3b31; font-weight:700; }
+  .nav-icon { font-size:26px; }
+
+  .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:rgba(44,34,26,0.92); color:#f4ebd8; padding:12px 24px; border-radius:8px; font-size:14px; max-width:90%; text-align:center; z-index:9999; transition:opacity 0.3s; pointer-events:none; }
+  .toast.hidden { opacity:0; }
+</style>
+</head>
+<body>
+
+<div class="status-bar"><span>◉◉◉◉◉</span><span class="stime" id="stime">00:00Z · ARCHIVE</span><span>⚡ ▮▮▮</span></div>
+
+<div class="page-header">
+  <span class="overline">WORLD WAR II · INTERACTIVE ATLAS</span>
+  <span class="title">二战历史地图集</span>
+  <span class="subtitle">1939 — 1945 · 回望硝烟，铭记历史</span>
+  <div class="divider"></div>
+</div>
+
+<div class="map-card">
+  <div id="map"></div>
+  <div class="map-bar">
+    <span class="year-badge" id="yearBadge">1939年</span>
+    <span class="map-hint">← 滑动时间轴探索 →</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">⏳ 时间轴</span>
+    <span class="badge badge-intel" id="displayDate">1939年1月</span>
+  </div>
+  <div class="slider-wrap">
+    <input type="range" id="slider" min="1939" max="1946" step="0.1" value="1939">
+  </div>
+  <div class="year-labels">
+    <span>1939</span><span>1940</span><span>1941</span><span>1942</span><span>1943</span><span>1944</span><span>1945</span><span>1946</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">📜 战役记录</span>
+    <span class="badge badge-classified">CLASSIFIED</span>
+  </div>
+  <div id="eventList"></div>
+</div>
+
+<div class="nav-bar">
+  <div class="nav-item active">
+    <span class="nav-icon">🗺️</span><span>态势图</span>
+  </div>
+  <div class="nav-item" onclick="goTab('/pages/classroom/classroom')">
+    <span class="nav-icon">📖</span><span>课堂</span>
+  </div>
+  <div class="nav-item" onclick="goTab('/pages/explore/explore')">
+    <span class="nav-icon">🧭</span><span>探索</span>
+  </div>
+  <div class="nav-item" onclick="goTab('/pages/my/my')">
+    <span class="nav-icon">🎖️</span><span>档案室</span>
+  </div>
+</div>
+
+<div class="toast hidden" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ========== 事件数据 ==========
+var EVENTS = [
+  { id:1,  title:"德国入侵波兰",       year:1939.66, dateStr:"1939年9月1日",   lat:52.06, lng:19.25,  type:"axis",   desc:"二战欧洲战场爆发的标志。德军闪电战迅速击溃波兰防线。" },
+  { id:2,  title:"冬季战争",           year:1939.91, dateStr:"1939年11月30日", lat:60.17, lng:24.94,  type:"neutral",desc:"苏联入侵芬兰，芬兰以弱胜强。" },
+  { id:3,  title:"大西洋海战",         year:1939.91, dateStr:"1939年9月-1945年", lat:50.0, lng:-20.0, type:"neutral",desc:"二战持续时间最长的战役，德国U艇对盟军护航船队的绞杀战。" },
+  { id:4,  title:"威瑟堡行动",         year:1940.25, dateStr:"1940年4月9日",   lat:55.68, lng:12.57,  type:"axis",   desc:"德国入侵丹麦和挪威，确保北欧铁矿砂供应线。" },
+  { id:5,  title:"纳尔维克战役",       year:1940.33, dateStr:"1940年4月-6月",  lat:68.43, lng:17.43,  type:"allied", desc:"盟军在挪威纳尔维克的反击，虽战术胜利但最终因法国战局恶化而撤离。" },
+  { id:6,  title:"法国战役",           year:1940.41, dateStr:"1940年5月10日",  lat:49.50, lng:2.50,   type:"axis",   desc:"德军绕过马奇诺防线闪击西欧，六周内法国投降。" },
+  { id:7,  title:"敦刻尔克大撤退",     year:1940.50, dateStr:"1940年5月26日",  lat:51.03, lng:2.38,   type:"neutral",desc:"发电机行动——33万英法联军从敦刻尔克海滩成功撤退至英国。" },
+  { id:8,  title:"不列颠空战",         year:1940.66, dateStr:"1940年7月-10月", lat:51.50, lng:-0.12,  type:"allied", desc:"皇家空军英勇抵抗，希特勒首尝败绩，推迟海狮计划。" },
+  { id:9,  title:"克里特岛战役",       year:1941.41, dateStr:"1941年5月20日",  lat:35.24, lng:24.81,  type:"axis",   desc:"德军首次大规模空降作战，以惨重代价夺取克里特岛。" },
+  { id:10, title:"巴巴罗萨行动",       year:1941.50, dateStr:"1941年6月22日",  lat:55.75, lng:37.62,  type:"axis",   desc:"纳粹德国撕毁条约入侵苏联，史上最大规模陆上攻势。" },
+  { id:11, title:"列宁格勒围城",       year:1941.66, dateStr:"1941年9月8日",   lat:59.93, lng:30.34,  type:"neutral",desc:"872天的围城，超过100万平民死亡，列宁格勒永不屈服。" },
+  { id:12, title:"莫斯科战役",         year:1941.83, dateStr:"1941年10月-1942年1月", lat:55.75, lng:37.62, type:"allied", desc:"德军闪电战首次被挫败，苏联红军在严寒中发起反击。" },
+  { id:13, title:"珍珠港事件",         year:1941.91, dateStr:"1941年12月7日",  lat:21.36, lng:-157.95, type:"axis",   desc:"日本偷袭珍珠港，重创美国太平洋舰队，美国正式参战。" },
+  { id:14, title:"珊瑚海海战",         year:1942.37, dateStr:"1942年5月4-8日",  lat:-15.0, lng:155.0,  type:"allied", desc:"史上首次航母对决，日军南下进攻莫尔兹比港被阻止。" },
+  { id:15, title:"中途岛海战",         year:1942.45, dateStr:"1942年6月4日",   lat:28.20, lng:-177.35, type:"allied", desc:"太平洋战场转折点，美军击沉日本四艘主力航母。" },
+  { id:16, title:"斯大林格勒战役",     year:1942.58, dateStr:"1942年8月-1943年2月", lat:48.70, lng:44.51, type:"allied", desc:"二战最惨烈战役之一，东线转折点，德军第六集团军覆灭。" },
+  { id:17, title:"瓜达尔卡纳尔战役",   year:1942.66, dateStr:"1942年8月-1943年2月", lat:-9.58, lng:160.15, type:"allied", desc:"美军在南太平洋首次大规模反攻，争夺亨德森机场的血战。" },
+  { id:18, title:"阿拉曼战役",         year:1942.83, dateStr:"1942年10月23日", lat:30.83, lng:28.95,  type:"allied", desc:"蒙哥马利率英第八集团军在北非击败隆美尔的非洲军团。" },
+  { id:19, title:"火炬行动",           year:1942.91, dateStr:"1942年11月8日",  lat:35.60, lng:-2.50,  type:"allied", desc:"英美联军登陆北非法属摩洛哥和阿尔及利亚，夹击隆美尔。" },
+  { id:20, title:"库尔斯克会战",       year:1943.55, dateStr:"1943年7月5日",   lat:51.72, lng:36.19,  type:"allied", desc:"史上最大规模坦克会战，普罗霍罗夫卡的钢铁碰撞。" },
+  { id:21, title:"西西里登陆",         year:1943.58, dateStr:"1943年7月9日",   lat:37.60, lng:14.02,  type:"allied", desc:"哈士奇行动——盟军登陆西西里岛，敲开欧洲南大门。" },
+  { id:22, title:"意大利投降",         year:1943.66, dateStr:"1943年9月8日",   lat:41.90, lng:12.50,  type:"allied", desc:"意大利与盟军签署停战协议，轴心国开始瓦解。" },
+  { id:23, title:"卡西诺山战役",       year:1944.16, dateStr:"1944年1月-5月",  lat:41.49, lng:13.81,  type:"allied", desc:"盟军沿古斯塔夫防线血战四个月，本笃会修道院化为废墟。" },
+  { id:24, title:"诺曼底登陆",         year:1944.45, dateStr:"1944年6月6日",   lat:49.33, lng:-0.88,  type:"allied", desc:"霸王行动——人类历史上最大规模两栖登陆作战，开辟第二战场。" },
+  { id:25, title:"巴黎解放",           year:1944.58, dateStr:"1944年8月25日",  lat:48.86, lng:2.35,   type:"allied", desc:"自由法国第二装甲师进入巴黎，三色旗重新在凯旋门升起。" },
+  { id:26, title:"华沙起义",           year:1944.66, dateStr:"1944年8月-10月", lat:52.23, lng:21.01,  type:"neutral",desc:"波兰国家军英勇起义，苦战63天后弹尽粮绝，华沙被夷为平地。" },
+  { id:27, title:"市场花园行动",       year:1944.74, dateStr:"1944年9月17日",  lat:51.98, lng:5.91,   type:"allied", desc:"蒙哥马利大胆的空降作战计划，最终'遥远的桥'未能跨越莱茵河。" },
+  { id:28, title:"莱特湾海战",         year:1944.82, dateStr:"1944年10月23-26日", lat:10.83,lng:125.42, type:"allied", desc:"史上最大规模海战，日本联合舰队主力覆灭，神风特攻队首次登场。" },
+  { id:29, title:"突出部战役",         year:1944.91, dateStr:"1944年12月16日", lat:50.25, lng:5.50,   type:"allied", desc:"突出部之役——德军西线最后的大规模反攻，巴斯托涅的101空降师坚守不退。" },
+  { id:30, title:"硫磺岛战役",         year:1945.16, dateStr:"1945年2月19日",  lat:24.78, lng:141.32, type:"allied", desc:"美军伤亡惨重的岛屿攻坚战，星条旗在折钵山顶升起。" },
+  { id:31, title:"雅尔塔会议",         year:1945.16, dateStr:"1945年2月4-11日", lat:44.50, lng:34.17,  type:"allied", desc:"罗斯福、丘吉尔、斯大林三巨头敲定战后世界格局。" },
+  { id:32, title:"冲绳战役",           year:1945.33, dateStr:"1945年4月-6月",  lat:26.33, lng:127.80, type:"allied", desc:"太平洋战场最后一场大规模战役，日军疯狂抵抗，平民伤亡惨重。" },
+  { id:33, title:"柏林战役",           year:1945.33, dateStr:"1945年4月16日",  lat:52.52, lng:13.40,  type:"allied", desc:"苏军集结250万兵力攻入柏林，红旗插上国会大厦。" },
+  { id:34, title:"德国无条件投降",     year:1945.37, dateStr:"1945年5月8日",   lat:52.52, lng:13.38,  type:"allied", desc:"欧战胜利日——纳粹德国无条件投降，V-E Day。" },
+  { id:35, title:"广岛与长崎原子弹",   year:1945.60, dateStr:"1945年8月6日/9日", lat:34.39,lng:132.46, type:"allied", desc:"原子弹加速了战争结束，也拉开了核时代的序幕。" },
+  { id:36, title:"日本无条件投降",     year:1945.66, dateStr:"1945年9月2日",   lat:35.68, lng:139.76, type:"allied", desc:"密苏里号战列舰上签署投降书，二战正式结束，V-J Day。" }
+];
+
+var map, markers = [], sliderValue = 1939;
+
+function visibleEvents() {
+  return EVENTS.filter(function(e) { return e.year <= sliderValue; }).reverse();
+}
+
+// ===== 地图 =====
+function initMap() {
+  map = L.map('map', { center:[35,25], zoom:3, minZoom:2, maxZoom:7, zoomControl:false, attributionControl:false });
+  L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    className: 'map-tiles'
+  }).addTo(map);
+  L.control.zoom({ position:'bottomright' }).addTo(map);
+  setTimeout(function() { map.invalidateSize(); }, 500);
+  updateMarkers();
+}
+
+function updateMarkers() {
+  if (!map) return;
+  markers.forEach(function(m) { map.removeLayer(m); });
+  markers = [];
+  visibleEvents().forEach(function(ev) {
+    var b = map.getBounds(), w = b.getWest(), e = b.getEast();
+    var base = ev.lng;
+    while (base - map.getCenter().lng > 180) base -= 360;
+    while (base - map.getCenter().lng < -180) base += 360;
+    [-720,-360,0,360,720].forEach(function(off) {
+      var lng = base + off;
+      if (lng < w-5 || lng > e+5) return;
+      var color = ev.type === 'allied' ? '#2c4a6e' : ev.type === 'axis' ? '#8b2a2a' : '#b8935a';
+      var m = L.circleMarker([ev.lat, lng], { radius:7, fillColor:color, color:'#fff', weight:1.5, fillOpacity:0.85 }).addTo(map);
+      m.bindPopup('<b>' + ev.title + '</b><br>' + ev.dateStr + '<br>' + ev.desc);
+      markers.push(m);
+    });
+  });
+}
+
+// ===== 事件列表 =====
+function renderEvents() {
+  var list = document.getElementById('eventList');
+  var evs = visibleEvents();
+  var html = '';
+  evs.forEach(function(ev) {
+    html += '<div class="event-item" data-id="' + ev.id + '">' +
+      '<div class="dot ' + ev.type + '"></div>' +
+      '<div class="event-info">' +
+        '<span class="event-name">' + ev.title + '</span>' +
+        '<span class="event-date">' + ev.dateStr + '</span>' +
+      '</div>' +
+    '</div>';
+  });
+  list.innerHTML = html;
+
+  // 绑定点击
+  [].forEach.call(list.querySelectorAll('.event-item'), function(el) {
+    el.addEventListener('click', function() {
+      var id = parseInt(this.getAttribute('data-id'));
+      var ev = EVENTS.find(function(e) { return e.id === id; });
+      if (ev) focusEvent(ev);
+    });
+  });
+}
+
+function focusEvent(ev) {
+  var base = ev.lng;
+  while (base - map.getCenter().lng > 180) base -= 360;
+  while (base - map.getCenter().lng < -180) base += 360;
+  map.flyTo([ev.lat, base], 6);
+  showToast(ev.title + '\n' + ev.desc);
+}
+
+// ===== Toast =====
+var toastTimer;
+function showToast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { el.classList.add('hidden'); }, 2500);
+}
+
+// ===== 滑块 =====
+function updateUI() {
+  var y = Math.floor(sliderValue);
+  var m = Math.floor((sliderValue - y) * 12) + 1;
+  document.getElementById('displayDate').textContent = y + '年' + m + '月';
+  document.getElementById('yearBadge').textContent = y + '年';
+  updateMarkers();
+  renderEvents();
+}
+
+document.getElementById('slider').addEventListener('input', function(e) {
+  sliderValue = parseFloat(e.target.value);
+  updateUI();
+});
+
+// ===== 导航 =====
+function goTab(url) {
+  if (typeof uni !== 'undefined' && uni.postMessage) {
+    uni.postMessage({ data: { action: 'switchTab', url: url } });
+  }
+}
+
+// ===== 启动 =====
+window.addEventListener('DOMContentLoaded', function() {
+  var now = new Date();
+  var h = String(now.getHours()).padStart(2,'0');
+  var m = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('stime').textContent = h + ':' + m + 'Z · ARCHIVE';
+  initMap();
+  renderEvents();
+});
+</script>
+</body>
+</html>

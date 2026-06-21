@@ -1,0 +1,10 @@
+{
+  "name": "get-posts",
+  "extensions": [],
+  "cloudfunction-config": {
+    "memorySize": 256,
+    "timeout": 10,
+    "triggers": [],
+    "path": "/get-posts"
+  }
+}

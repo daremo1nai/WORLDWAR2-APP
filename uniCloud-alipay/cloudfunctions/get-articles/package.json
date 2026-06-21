@@ -1,0 +1,10 @@
+{
+  "name": "get-articles",
+  "extensions": [],
+  "cloudfunction-config": {
+    "memorySize": 256,
+    "timeout": 10,
+    "triggers": [],
+    "path": "/get-articles"
+  }
+}

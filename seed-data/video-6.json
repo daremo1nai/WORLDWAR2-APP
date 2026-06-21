@@ -1,0 +1,15 @@
+{
+  "id": 6,
+  "title": "武器解码：二战坦克进化史",
+  "excerpt": "科普系列共8集",
+  "coverColor": "vt3",
+  "type": "video",
+  "duration": "共8集",
+  "rating": "4.7",
+  "plays": "6.5万",
+  "category": "科普",
+  "emoji": "📺",
+  "created_at": "2026-05-02",
+  "description": "从二战初期的轻型坦克到战争末期的重型钢铁巨兽，本系列深度解析二战中各国坦克的技术演进与实战表现。涵盖德国虎式、豹式、苏联T-34、美国谢尔曼、英国丘吉尔等经典型号的设计理念、战场表现和技术遗产。每集聚焦一种代表性坦克，通过3D建模还原内部结构和作战场景。",
+  "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+}

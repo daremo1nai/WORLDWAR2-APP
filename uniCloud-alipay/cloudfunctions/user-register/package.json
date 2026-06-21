@@ -1,0 +1,10 @@
+{
+  "name": "user-register",
+  "extensions": [],
+  "cloudfunction-config": {
+    "memorySize": 256,
+    "timeout": 10,
+    "triggers": [],
+    "path": "/user-register"
+  }
+}
